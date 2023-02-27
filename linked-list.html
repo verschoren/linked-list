@@ -1,0 +1,80 @@
+<div class="container-divider"></div>
+    <div class="container">
+        <nav class="sub-nav">
+            <ol class="breadcrumbs">
+                <li title="Help Center"><a href="/hc/en-us">Help Center</a>    </li>
+                <li title="Linked List">Linked List</li>
+            </ol>
+            <div class="search-container">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" focusable="false" viewBox="0 0 12 12" class="search-icon" aria-hidden="true">
+                    <circle cx="4.5" cy="4.5" r="4" fill="none" stroke="currentColor"/>
+                    <path stroke="currentColor" stroke-linecap="round" d="M11 11L7.5 7.5"/>
+                </svg>
+                {{search scoped=settings.scoped_kb_search submit=false}}
+            </div>
+        </nav>
+
+        <div class="category-container">
+            <div class="category-content">
+                <header class="page-header">
+                    <h1>Linked List</h1>
+                    <div class="article-subscribe">
+                        <button href="https://support.internalnote.com/hc/en-us/p/linked-list-admin" type="button" id="addlink">Add Link</button>
+                    </div>
+                    <p class="page-header-description">A list of interesting links.</p>
+                </header>
+                <div id="main-content" class="section-tree"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    $(document).ready(function(){
+        if (HelpCenter.user.role != "agent" && HelpCenter.user.role != "manager"){
+            $('#addlink').hide();
+        }
+      
+      	document.getElementById("addlink").addEventListener("click", function(event){
+	    	event.preventDefault();
+		    window.open("https://support.internalnote.com/hc/en-us/p/linked-list-admin");
+		})
+
+        getLinks();
+    
+        function getLinks(){
+            var settings = {
+                "url": "https://linked-list.verschoren.workers.dev/get",
+              "method": "GET",
+            };
+
+            $.ajax(settings).done(function (links) {
+                var sections = [];
+                console.log(links);
+                links.forEach(function(link) {
+                    if (link.source.id == '01GT1VEVYWJ10HMZKMR5YRXQHB'){
+                        if(sections.indexOf(link.type.name) === -1) {
+                            sections.push(link.type.name);
+                            $('#main-content').append(`
+                                <section class="section" data-section="${link.type.name}">
+                                    <h2 class="section-tree-title" >${link.type.name}</h2>
+                                    <ul class="article-list" data-articles="${link.type.name}">
+                                    </ul>
+                                </section>
+                            `)
+                        }
+                        console.log(sections);
+                        $('.article-list[data-articles="'+link.type.name+'"]').append(`
+                            <li class="search-result-list-item result-external_content_record" style="margin-top:30px;" id="${link.id}">
+                                <h2 class="search-result-title">
+                                    <a href="${link.url}" class="results-list-item-link" target="_blank">${link.title}</a>
+                                </h2>
+                                <span class="meta-data"><time datetime="${link.created_at}" title="${link.created_at}" data-datetime="calendar">${new Date(link.created_at).toLocaleDateString("en-US")}</time></span>
+                                <div class="">${link.body.slice(0,100)}...</div>
+                            </li>
+                        `);
+                    }
+                });
+            });  
+        };
+    });
+  </script>

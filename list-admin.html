@@ -1,0 +1,190 @@
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
+<div class="flex h-full flex-col">
+	<div class="flex min-h-0 flex-1 overflow-hidden">
+		<main class="min-w-0 flex-1 border-t border-gray-200 xl:flex"> 
+			<section aria-labelledby="message-heading" class="flex h-full min-w-0 flex-1 flex-col overflow-hidden xl:order-last">
+				<div class="min-h-0 flex-1 overflow-y-auto">
+					<form class="space-y-8 divide-y divide-gray-200 p-8" onsubmit="myFunction()">
+						<div class="pt-8">
+							<div>
+								<h3 class="text-base font-semibold leading-6 text-gray-900">
+									Add a new link
+								</h3>
+								<p class="mt-1 text-sm text-gray-500">
+									Submit a new link to the list.
+								</p>
+							</div>
+							<div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-4">
+								<div class="sm:col-span-3">
+									<label for="title" class="block text-sm font-medium text-gray-700">Title</label> 
+									<div class="mt-1">
+										<input type="text" name="title" id="title" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+									</div>
+								</div>
+								<div class="sm:col-span-3">
+									<label for="url" class="block text-sm font-medium text-gray-700">Link</label> 
+									<div class="mt-1">
+										<input id="url" name="url" type="url" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+									</div>
+								</div>
+								<div class="sm:col-span-3">
+									<label for="body" class="block text-sm font-medium text-gray-700">Description</label> 
+									<div class="mt-1">
+										<textarea id="body" name="body" rows="3" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></textarea>
+									</div>
+									<p class="mt-2 text-sm text-gray-500">
+										Write a few sentences about the post.
+									</p>
+								</div>
+								<div class="sm:col-span-3">
+									<label for="type" class="block text-sm font-medium text-gray-700">Type</label> 
+									<div class="mt-1">
+										<select id="type" name="type" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+										</select>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="pt-5">
+							<div class="flex justify-start">
+								<button type="submit" id="submit" class="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Submit</button> 
+							</div>
+						</div>
+					</form>
+				</div>
+			</section>
+			<aside class="hidden xl:order-first xl:block xl:flex-shrink-0">
+				<div class="relative flex h-full w-96 flex-col border-r border-gray-200 bg-white">
+					<div class="flex-shrink-0">
+						<div class="flex h-16 flex-col justify-center bg-white px-6">
+							<div class="flex items-baseline space-x-3">
+								<h2 class="text-lg font-medium text-gray-900">
+									Linked List
+								</h2>
+								<p class="text-sm font-medium text-gray-500" id="count">
+								</p>
+							</div>
+						</div>
+					</div>
+					<nav aria-label="Message list" class="min-h-0 flex-1 overflow-y-auto">
+						<ul role="list" class="divide-y divide-gray-200 border-b border-gray-200" id="links">
+						</ul>
+					</nav>
+				</div>
+			</aside>
+		</main> 
+	</div>
+</div>
+<script>
+
+$(document).ready(function(){
+	if (HelpCenter.user.role == "agent" || HelpCenter.user.role == "manager"){
+		getLinks();
+	} else {
+		$('#adminpanel').html("<p class='text-center'>You need to be logged in to view this page.</p>")
+	}
+
+	document.getElementById("submit").addEventListener("click", function(event){
+	    event.preventDefault()
+	    var json = {
+			"record": {
+				"body": $('#body').val(),
+				"external_id": 'abc' + Date.now(),
+				"locale": "en-us",
+				"source_id": "01GT1VEVYWJ10HMZKMR5YRXQHB",
+				"title": $('#title').val(),
+				"type_id": $('#type').val(),
+				"url":  $('#url').val()
+			}
+		}
+		console.log(json)
+	
+		var settings = {
+			"url": "https://linked-list.verschoren.workers.dev/add",
+			"method": "POST",
+			"headers": {
+				"Content-Type": "application/json",
+			},
+			"data": JSON.stringify(json),
+		};
+	
+		$.ajax(settings).done(function (response) {
+			console.log(response);
+			getLinks();
+			$('#body').val(''),
+			$('#title').val(''),
+			$('#type').val(''),
+			$('#url').val('')
+		});  
+	});
+	
+	//get element with class delete and get click event of dynamically created element
+	$(document).on('click', '.delete', function(event){
+		//get the data-target attribute of the clicked element
+		var id = $(this).attr('data-target');
+		console.log(id);
+		var settings = {
+			"url": "https://linked-list.verschoren.workers.dev/delete/"+id,
+			"method": "POST",
+			"headers": {
+				"Content-Type": "application/json",
+			},
+		};
+	
+		//ajax settings without done function
+		$.ajax(settings);
+		location.reload();
+		// getLinks();
+	});
+
+	function getLinks(){
+	    var settings = {
+			"url": "https://linked-list.verschoren.workers.dev/get",
+			"method": "GET",
+		};
+	
+		$.ajax(settings).done(function (links) {
+	    	var sections = [];
+	 		console.log(links);
+	    	$('#links').html('');
+	    	$('#type').html('');
+	
+			var count = 0;
+			links.forEach(function(link) {
+				if (link.source.id == '01GT1VEVYWJ10HMZKMR5YRXQHB'){
+					if(sections.indexOf(link.type.name) === -1) {
+						sections.push(link.type.name);
+						$('#type').append(`<option value="${link.type.id}" selected>${link.type.name}</option>`)
+					}
+		
+					count++;
+					$('#links').append(`
+						<li class="flex bg-white py-5 px-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-blue-600 hover:bg-gray-50">
+							<div class="delete text-red-500 mr-4" data-target="${link.id}">
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+									<path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clip-rule="evenodd" />
+								</svg>
+							</div>
+							<div>
+								<div class="flex justify-between space-x-3">
+									<div class="min-w-0 flex-1">
+										<a href="${link.url}" class="block focus:outline-none" target="_blank">
+											<p class="truncate text-sm font-medium text-gray-900">${link.title.slice(0,30)}...</p>
+											<p class="truncate text-sm text-gray-500">${link.type.name}</p>
+										</a>
+									</div>
+									<time datetime="${link.created_at}" class="flex-shrink-0 whitespace-nowrap text-sm text-gray-500">${new Date(link.created_at).toLocaleDateString("en-US")}</time>
+								</div>
+								<div class="mt-1">
+									<p class="text-sm text-gray-600 line-clamp-2">${link.body.slice(0,50)}...</p>
+								</div>
+							</div>
+						</li>
+					`);
+				}
+				$('#count').html(count+' links');
+			});
+		});  
+	}
+});
+</script>
