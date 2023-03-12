@@ -1,80 +1,199 @@
 <div class="container-divider"></div>
-    <div class="container">
-        <nav class="sub-nav">
-            <ol class="breadcrumbs">
-                <li title="Help Center"><a href="/hc/en-us">Help Center</a>    </li>
-                <li title="Linked List">Linked List</li>
-            </ol>
-            <div class="search-container">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" focusable="false" viewBox="0 0 12 12" class="search-icon" aria-hidden="true">
-                    <circle cx="4.5" cy="4.5" r="4" fill="none" stroke="currentColor"/>
-                    <path stroke="currentColor" stroke-linecap="round" d="M11 11L7.5 7.5"/>
-                </svg>
-                {{search scoped=settings.scoped_kb_search submit=false}}
-            </div>
-        </nav>
+<div class="container">
+    <nav class="sub-nav">
+        <ol class="breadcrumbs">
+            <li title="Help Center"><a href="/hc/en-us">Help Center</a></li>
+            <li title="Linked List">Linked List</li>
+        </ol>
+        <div class="search-container">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" focusable="false" viewBox="0 0 12 12" class="search-icon" aria-hidden="true">
+                <circle cx="4.5" cy="4.5" r="4" fill="none" stroke="currentColor"/>
+                <path stroke="currentColor" stroke-linecap="round" d="M11 11L7.5 7.5"/>
+            </svg>
+            {{search scoped=settings.scoped_kb_search submit=false}}
+        </div>
+    </nav>
 
-        <div class="category-container">
-            <div class="category-content">
-                <header class="page-header">
-                    <h1>Linked List</h1>
-                    <div class="article-subscribe">
-                        <button href="https://support.internalnote.com/hc/en-us/p/linked-list-admin" type="button" id="addlink">Add Link</button>
+    <div class="category-container">
+        <div class="category-content">
+            <header class="page-header">
+                <h1>Linked List</h1>
+                <div class="article-subscribe">
+                    <button type="button" id="addlink">Add Link</button>
+                </div>
+                <p class="page-header-description">A list of interesting links.</p>
+            </header>
+            <form class="linkform" onsubmit="myFunction()">
+                <div>
+                    <h2>Add a new link</h2>
+                </div>
+                <div>
+                    <div class="form-field string">
+                        <label>Title</label>
+                        <input type="text" name="title" id="title">
                     </div>
-                    <p class="page-header-description">A list of interesting links.</p>
-                </header>
-                <div id="main-content" class="section-tree"></div>
-            </div>
+                    <div class="form-field string">
+                        <label>Link</label>
+                        <input type="url" name="url" id="url">
+                    </div>
+                    <div class="form-field string">
+                        <label>Description</label>
+                        <input type="text" name="body" id="body">
+                    </div>
+                    <div class="form-field select">
+                        <label>Type</label>
+                        <select id="type" name="type" ></select>
+                    </div>
+                    <footer style="margin-top:20px;">
+                        <div id="submit">Submit</div>
+                    </footer>
+                </div>
+            </form>
+            <div id="main-content" class="section-tree"></div>
         </div>
     </div>
+</div>
 
-    <script>
-    $(document).ready(function(){
-        if (HelpCenter.user.role != "agent" && HelpCenter.user.role != "manager"){
-            $('#addlink').hide();
-        }
-      
-      	document.getElementById("addlink").addEventListener("click", function(event){
-	    	event.preventDefault();
-		    window.open("https://support.internalnote.com/hc/en-us/p/linked-list-admin");
-		})
+<script>
+$(document).ready(function(){
+	getLinks();
 
-        getLinks();
-    
-        function getLinks(){
-            var settings = {
-                "url": "https://linked-list.verschoren.workers.dev/get",
-              "method": "GET",
-            };
+	var admin = false;
+	if (HelpCenter.user.role != "agent" && HelpCenter.user.role != "manager"){
+		$('#addlink').hide();
+	} else {
+		admin = true;
+	}
 
-            $.ajax(settings).done(function (links) {
-                var sections = [];
-                console.log(links);
-                links.forEach(function(link) {
-                    if (link.source.id == '01GT1VEVYWJ10HMZKMR5YRXQHB'){
-                        if(sections.indexOf(link.type.name) === -1) {
-                            sections.push(link.type.name);
-                            $('#main-content').append(`
-                                <section class="section" data-section="${link.type.name}">
-                                    <h2 class="section-tree-title" >${link.type.name}</h2>
-                                    <ul class="article-list" data-articles="${link.type.name}">
-                                    </ul>
-                                </section>
-                            `)
-                        }
-                        console.log(sections);
-                        $('.article-list[data-articles="'+link.type.name+'"]').append(`
-                            <li class="search-result-list-item result-external_content_record" style="margin-top:30px;" id="${link.id}">
-                                <h2 class="search-result-title">
-                                    <a href="${link.url}" class="results-list-item-link" target="_blank">${link.title}</a>
-                                </h2>
-                                <span class="meta-data"><time datetime="${link.created_at}" title="${link.created_at}" data-datetime="calendar">${new Date(link.created_at).toLocaleDateString("en-US")}</time></span>
-                                <div class="">${link.body.slice(0,100)}...</div>
-                            </li>
-                        `);
-                    }
-                });
-            });  
-        };
-    });
-  </script>
+
+	document.getElementById("addlink").addEventListener("click", function(event){
+		event.preventDefault();
+		$('.linkform').show();
+	})
+
+	function getLinks(){
+		var settings = {
+			"url": "https://linked-list.verschoren.workers.dev/get",
+			"method": "GET",
+		};
+
+		$.ajax(settings).done(function (links) {
+			$('#main-content').html('');
+			var sections = [];
+			links.forEach(function(link) {
+				if (link.source.id == '01GT1VEVYWJ10HMZKMR5YRXQHB'){
+					if(sections.indexOf(link.type.name) === -1) {
+						sections.push(link.type.name);
+						$('#type').append(`<option value="${link.type.id}" selected>${link.type.name}</option>`)
+						$('#main-content').append(`
+							<section class="section" data-section="${link.type.name}">
+							<h2 class="section-tree-title" >${link.type.name}</h2>
+							<ul class="article-list" data-articles="${link.type.name}">
+							</ul>
+							</section>
+						`)
+					}
+					console.log(sections);
+					var deletebutton = `<span class="delete text-red-500 mr-4" data-target="${link.id}">Delete</span>`;
+					$('.article-list[data-articles="'+link.type.name+'"]').append(`
+						<li class="search-result-list-item result-external_content_record" style="margin-top:30px;" id="${link.id}">
+							<h2 class="search-result-title">
+								${admin == true? deletebutton : ''}
+								<a href="${link.url}" class="results-list-item-link" target="_blank">${link.title}</a>
+							</h2>
+							<div class="meta-data" style="margin-bottom:0.83em">
+								<time datetime="${link.created_at}" title="${link.created_at}" data-datetime="calendar">${new Date(link.created_at).toLocaleDateString("en-US")}</time>
+							</div>
+							<div class="">${link.body.slice(0,100)}...</div>
+						</li>
+					`);
+				}
+			});
+		});	
+	};
+
+	$(document).on('click', '.delete', function(event){
+		var id = $(this).attr('data-target');
+		var settings = {
+			"url": "https://linked-list.verschoren.workers.dev/delete/"+id,
+			"method": "POST",
+			"headers": {
+				"Content-Type": "application/json",
+			},
+		};
+
+		$.ajax(settings);
+		getLinks();
+	});
+
+	$(document).on('click', '#submit', function(event){
+		event.preventDefault()
+		var json = {
+			"record": {
+				"body": $('#body').val(),
+				"external_id": 'abc' + Date.now(),
+				"locale": "en-us",
+				"source_id": "01GT1VEVYWJ10HMZKMR5YRXQHB",
+				"title": $('#title').val(),
+				"type_id": $('#type').val(),
+				"url":	$('#url').val()
+			}
+		}
+
+		var settings = {
+			"url": "https://linked-list.verschoren.workers.dev/add",
+			"method": "POST",
+			"headers": {
+				"Content-Type": "application/json",
+			},
+			"data": JSON.stringify(json),
+		};
+
+		$.ajax(settings).done(function (response) {
+			getLinks();
+			$('#body').val(''),
+			$('#title').val(''),
+			$('#type').val(''),
+			$('#url').val('')
+			$('.linkform').hide();
+		});	
+	});
+});
+</script>
+
+<style>
+	.delete {
+		border: 1px solid #ef4444;
+		color: #ef4444;
+		padding: 3px;
+		border-radius: 4px;
+	}
+
+	.delete:hover {
+		background: #fca5a5;
+	}
+
+	.linkform {
+		border: 1px solid #ddd;
+		padding: 15px;
+		border-radius: 10px;
+		margin-bottom: 20px;
+  	    display:none;
+	}
+  
+	#submit {
+		cursor: pointer;
+		background-color: rgba(2, 106, 219, 1);
+		border: 0;
+		border-radius: 4px;
+		color: #FFFFFF;
+		font-size: 14px;
+		line-height: 2.72;
+		padding: 0 1.9286em;
+		width: 100px;
+	}
+
+    #submit:hover: {
+        background-color: #013976
+    }
+</style>
