@@ -8,14 +8,6 @@ const headers_body = {
     'Access-Control-Allow-Methods': 'GET,HEAD,POST,OPTIONS',
     'Access-Control-Max-Age': '86400',
 }
-
-//Helper function to merge the paginated results into one array
-const merge = (first, second) => {
-    for(let i=0; i<second.length; i++) {
-        first.push(second[i]);
-    }
-    return first;
-}
       
 export default {
     async fetch(request, env) {
@@ -28,43 +20,21 @@ export default {
  
                 //We return all records in the federated search index
                 if (pathname.startsWith("/get")) {
-                    var federated_items =[] //We will store all the paginated records in this array
-                    const url = 'https://'+subdomain+'.zendesk.com/api/v2/guide/external_content/records';
-                    var results = await getRecords(url,federated_items);
+                    var results = await getRecords('',[]);
                     return new Response(JSON.stringify(results), {headers: headers_body});
                 }
 
                 //We add a new record to the federated search index
                 if (pathname.startsWith("/add")) {
                     var enquiry = JSON.stringify(await request.json());
-                    const url = 'https://'+subdomain+'.zendesk.com/api/v2/guide/external_content/records';
-
-                    var init = {
-                        body: enquiry,
-                        method: 'POST',
-                        headers: {
-                            'content-type': 'application/json;charset=UTF-8',
-                            'Authorization': 'Basic ' + auth,
-                        },
-                    };
-                    const response = await fetch(url, init);
-                    const results = await response.json();
+                    var results = await addRecord(enquiry);                    
                     return new Response(JSON.stringify(results), {headers: headers_body});
                 }
                 
                 //We delete a record from the federated search index
                 if (pathname.startsWith("/delete")) {
-                    const url = 'https://'+subdomain+'.zendesk.com/api/v2/guide/external_content/records/'+path_part[2];
-
-                    var init = {
-                        method: 'DELETE',
-                        headers: {
-                            'content-type': 'application/json;charset=UTF-8',
-                            'Authorization': 'Basic ' + auth,
-                        },
-                    };
-                    const response = await fetch(url, init);
-                    return new Response('deleted', {headers: headers_body});
+                    var result = await deleteRecord(path_part[2]);
+                    return new Response('deleted ' + result, {headers: headers_body});
                 }
                 
                 return new Response('Path not found', {status: 404,headers: headers_body});
@@ -74,9 +44,39 @@ export default {
         }
     }
 }
+async function deleteRecord(id){
+    const url = 'https://'+subdomain+'.zendesk.com/api/v2/guide/external_content/records/'+id;
 
-//Function that gets all the records from the federated search index and handles pagination
+    var init = {
+        method: 'DELETE',
+        headers: {
+            'content-type': 'application/json;charset=UTF-8',
+            'Authorization': 'Basic ' + auth,
+        },
+    };
+    const result = await fetch(url, init);
+    return result;
+}
+
+async function addRecord(enquiry){
+    const url = 'https://'+subdomain+'.zendesk.com/api/v2/guide/external_content/records';
+
+    var init = {
+        body: enquiry,
+        method: 'POST',
+        headers: {
+            'content-type': 'application/json;charset=UTF-8',
+            'Authorization': 'Basic ' + auth,
+        },
+    };
+    const response = await fetch(url, init);
+    const results = await response.json();
+    return id;
+}
+
 async function getRecords(url,federated_items){
+    url = url != ''? url : 'https://'+subdomain+'.zendesk.com/api/v2/guide/external_content/records?page[size]=10';
+
     var init = {
         method: 'GET',
         headers: {
@@ -123,4 +123,12 @@ function handleOptionsRequest(request) {
             },
         })
     }
+}
+
+//Helper function to merge the paginated results into one array
+const merge = (first, second) => {
+    for(let i=0; i<second.length; i++) {
+        first.push(second[i]);
+    }
+    return first;
 }
