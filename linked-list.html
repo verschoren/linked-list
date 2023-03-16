@@ -56,11 +56,14 @@
 
 <script>
 $(document).ready(function(){
+	var worker_url = 'https://linked-list.verschoren.workers.dev';
+
 	getLinks();
 
 	var admin = false;
 	if (HelpCenter.user.role != "agent" && HelpCenter.user.role != "manager"){
-		$('#addlink').hide();
+		$('#addlink').remove();
+	    $('.linkform').remove();
 	} else {
 		admin = true;
 	}
@@ -73,7 +76,7 @@ $(document).ready(function(){
 
 	function getLinks(){
 		var settings = {
-			"url": "https://linked-list.verschoren.workers.dev/get",
+			"url": worker_url + "/get",
 			"method": "GET",
 		};
 
@@ -81,20 +84,18 @@ $(document).ready(function(){
 			$('#main-content').html('');
 			var sections = [];
 			links.forEach(function(link) {
-				if (link.source.id == '01GT1VEVYWJ10HMZKMR5YRXQHB'){
 					if(sections.indexOf(link.type.name) === -1) {
 						sections.push(link.type.name);
 						$('#type').append(`<option value="${link.type.id}" selected>${link.type.name}</option>`)
 						$('#main-content').append(`
 							<section class="section" data-section="${link.type.name}">
 							<h2 class="section-tree-title" >${link.type.name}</h2>
-							<ul class="article-list" data-articles="${link.type.name}">
-							</ul>
+							<ul class="article-list" data-articles="${link.type.name}"></ul>
 							</section>
 						`)
 					}
-					console.log(sections);
-					var deletebutton = `<span class="delete text-red-500 mr-4" data-target="${link.id}">Delete</span>`;
+
+					var deletebutton = `<span class="delete" data-target="${link.id}">Delete</span>`;
 					$('.article-list[data-articles="'+link.type.name+'"]').append(`
 						<li class="search-result-list-item result-external_content_record" style="margin-top:30px;" id="${link.id}">
 							<h2 class="search-result-title">
@@ -107,7 +108,6 @@ $(document).ready(function(){
 							<div class="">${link.body.slice(0,100)}...</div>
 						</li>
 					`);
-				}
 			});
 		});	
 	};
@@ -115,7 +115,7 @@ $(document).ready(function(){
 	$(document).on('click', '.delete', function(event){
 		var id = $(this).attr('data-target');
 		var settings = {
-			"url": "https://linked-list.verschoren.workers.dev/delete/"+id,
+			"url": worker_url + "/delete/"+id,
 			"method": "POST",
 			"headers": {
 				"Content-Type": "application/json",
@@ -133,15 +133,14 @@ $(document).ready(function(){
 				"body": $('#body').val(),
 				"external_id": 'abc' + Date.now(),
 				"locale": "en-us",
-				"source_id": "01GT1VEVYWJ10HMZKMR5YRXQHB",
 				"title": $('#title').val(),
 				"type_id": $('#type').val(),
-				"url":	$('#url').val()
+				"url": $('#url').val()
 			}
 		}
 
 		var settings = {
-			"url": "https://linked-list.verschoren.workers.dev/add",
+			"url": worker_url + "/add",
 			"method": "POST",
 			"headers": {
 				"Content-Type": "application/json",

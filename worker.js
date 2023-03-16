@@ -1,5 +1,6 @@
 const subdomain = 'yourdomain' //your Zendesk subdomain
 const auth = '123457890qwerty=' //Base 64 encoded admin@domain.com/token:{Zendesk API token}
+const source_id = '01GT1VEVYWJ10HMZKMR5YRXQHB';
 
 const headers_body = {
     'content-type': 'application/json;charset=UTF-8',
@@ -61,6 +62,7 @@ async function deleteRecord(id){
 async function addRecord(enquiry){
     const url = 'https://'+subdomain+'.zendesk.com/api/v2/guide/external_content/records';
 
+    enquire.source_id = source_id;
     var init = {
         body: enquiry,
         method: 'POST',
@@ -88,13 +90,17 @@ async function getRecords(url,federated_items){
     const response = await fetch(url, init);
     const results = await response.json();
 
-
     merge(federated_items,results.records);
 
     //Check if the results are paginated and if so, call the function again
     if (results.meta.has_more == true){
         return await getRecords('https://'+subdomain+'.zendesk.com/api/v2/guide/external_content/records?page[size]=10&page[after]='+results.meta.after_cursor,federated_items);
     } else {
+        //filter federated_items to remove all records where source.id is not 01GT1VEVYWJ10HMZKMR5YRXQHB
+        federated_items = federated_items.filter(function(item){
+            return item.source.id == source_id;
+        });
+
         return federated_items;
     }
 }
